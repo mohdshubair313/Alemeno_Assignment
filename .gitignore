@@ -1,1 +1,41 @@
-.venv/
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pkl
+*.log
+*.sqlite3
+*.env
+*.DS_Store
+
+# Pytest
+.pytest_cache/
+
+# Coverage
+htmlcov/
+.coverage
+coverage.xml
+*.cover
+.cache
+
+# Django specific
+db.sqlite3
+media/
+staticfiles/
+*.mo
+*.pot
+
+# Docker
+*.pid
+*.sock
+docker-compose.override.yml
+docker-compose.dev.yml
+.env.docker
+__docker_build__/
+*.tar
+
+# Celery
+celerybeat-schedule
+celerybeat.pid

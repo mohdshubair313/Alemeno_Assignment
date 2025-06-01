@@ -7,6 +7,7 @@ from datetime import datetime
 def import_customer_data(file_path):
     pandas_dataframe = pd.read_excel(file_path)
     for _, row in pandas_dataframe.iterrows():
+        current_debt = row['Current Debt'] if 'Current Debt' in row else 0
         Customers.objects.create(
             customer_id = row['Customer ID'],
             first_name = row['First Name'],
@@ -15,7 +16,7 @@ def import_customer_data(file_path):
             age = row['Age'],
             monthly_salary = row['Monthly Salary'],
             approved_limit = row['Approved Limit'],
-            current_debt = row['Current Debt']
+            current_debt = current_debt
         )
     return f"{len(pandas_dataframe)} customers imported successfully."
 
@@ -38,6 +39,6 @@ def import_loan_data(file_path):
                 end_date=datetime.strptime(row['End Date'], '%d-%m-%Y'),
                 status=row['Status']
             )
-        except customer.DoesNotExist:
+        except Customers.DoesNotExist:
             continue
     return f"{len(pandas_dataframe)} loans imported successfully."

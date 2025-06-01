@@ -4,7 +4,6 @@ from rest_framework import status
 from .serializers import RegisterCustomerSerializer, CheckEligibilitySerializer, CreateLoanSerializer
 from .models import Customers, Loans
 from datetime import date
-from helper import calculate_approved_limit
 from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 
