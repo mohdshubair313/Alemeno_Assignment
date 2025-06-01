@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     command: >
       sh -c "./wait-for-it.sh db 5432 &&
              python manage.py migrate &&
@@ -33,16 +35,18 @@ services:
       - "6379:6379"
 
   worker:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     command: >
       sh -c "./wait-for-it.sh db 5432 &&
              python manage.py migrate &&
              celery -A app worker --loglevel=info --pool=solo"
+    volumes:
+      - .:/app
     depends_on:
       - db
       - redis
-    volumes:
-      - .:/app
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - DATABASE_URL=postgres://credituser:creditpass@db:5432/creditdb
