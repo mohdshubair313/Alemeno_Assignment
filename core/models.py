@@ -1,5 +1,5 @@
 from django.db import models
-
+https://www.adaptcentre.ie/careers/msca-postdoctoral-fellowships-2025/
 # Create your models here.
 
 class Customers(models.Model):
@@ -14,11 +14,6 @@ class Customers(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} - {self.phone_number}"
-    # class Meta:
-    #     db_table = 'customers'
-    #     verbose_name = 'Customer'
-    #     verbose_name_plural = 'Customers'
-    #     ordering = ['last_name', 'first_name']
 
 
 class Loans(models.Model):
@@ -28,15 +23,9 @@ class Loans(models.Model):
     tenure = models.IntegerField(help_text="Tenure in months")
     interest_rate = models.FloatField()
     monthly_installment = models.FloatField()
-    EMIs_paid_on_time_or_not = models.IntegerField()
-    start_date = models.DateField()
+    EMIs_paid_on_time = models.IntegerField()
+    Date_Approval_loan = models.DateField()
     end_date = models.DateField()
-    status = models.CharField(max_length=20)
 
     def __str__(self):
         return f"Loan {self.loan_id} - {self.loan_amount} for {self.customer.first_name} {self.customer.last_name}"
-    # class Meta:
-    #     db_table = 'loans'
-    #     verbose_name = 'Loan'
-    #     verbose_name_plural = 'Loans'
-    #     ordering = ['start_date']

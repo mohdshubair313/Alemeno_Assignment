@@ -1,7 +1,8 @@
 from celery import shared_task
 import pandas as pd
 from .models import Customers, Loans
-from datetime import datetime
+from django.db.utils import IntegrityError
+
 
 @shared_task
 def import_customer_data(file_path):
@@ -27,6 +28,11 @@ def import_loan_data(file_path):
     for _, row in pandas_dataframe.iterrows():
         try:
             customer = Customers.objects.get(customer_id=row['Customer ID'])
+            
+            # Skips if its already exists
+            if Loans.objects.filter(loan_id=row['Loan ID']).exists():
+                continue
+
             Loans.objects.create(
                 loan_id=row['Loan ID'],
                 customer=customer,
@@ -35,10 +41,11 @@ def import_loan_data(file_path):
                 interest_rate=row['Interest Rate'],
                 monthly_installment=row['Monthly payment'],
                 EMIs_paid_on_time=row['EMIs paid on Time'],
-                Date_Approval_loan=datetime.strptime(row['Date of Approval'], '%d-%m-%Y'),
-                end_date=datetime.strptime(row['End Date'], '%d-%m-%Y'),
-                status=row['Status']
+                Date_Approval_loan=row['Date of Approval'].to_pydatetime(),
+                end_date=row['End Date'].to_pydatetime(),
             )
         except Customers.DoesNotExist:
             continue
+        except IntegrityError:
+            continue  # In case of unexpected conflicts
     return f"{len(pandas_dataframe)} loans imported successfully."
