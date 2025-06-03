@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from .models import Customers, Loans
-from helper import calculate_approved_limit
+from .models import Customers
+from .helper import calculate_approved_limit
 
 class RegisterCustomerSerializer(serializers.ModelSerializer):
     monthly_income = serializers.FloatField(write_only=True)

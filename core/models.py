@@ -1,5 +1,4 @@
 from django.db import models
-https://www.adaptcentre.ie/careers/msca-postdoctoral-fellowships-2025/
 # Create your models here.
 
 class Customers(models.Model):
@@ -10,7 +9,8 @@ class Customers(models.Model):
     age = models.IntegerField()
     monthly_salary = models.FloatField()
     approved_limit = models.FloatField()
-    current_debt = models.FloatField()
+    current_debt = models.FloatField(default=0.0) # Default to 0.0 
+
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} - {self.phone_number}"
@@ -18,7 +18,7 @@ class Customers(models.Model):
 
 class Loans(models.Model):
     loan_id = models.AutoField(primary_key=True)
-    customer = models.ForeignKey(Customers, on_delete=models.CASCADE)
+    customer = models.ForeignKey(Customers, on_delete=models.CASCADE, related_name='loans')
     loan_amount = models.FloatField()
     tenure = models.IntegerField(help_text="Tenure in months")
     interest_rate = models.FloatField()

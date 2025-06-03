@@ -16,8 +16,6 @@ class RegisterCustomerView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# --------------------------               checking elgibility whether customer is elgible or not
-
 class CheckEligibilityView(APIView):
     def post(self, request):
         serializer = CheckEligibilitySerializer(data=request.data)
@@ -25,20 +23,19 @@ class CheckEligibilityView(APIView):
             return Response(serializer.errors, status=400)
         
         data = serializer.validated_data
-        customer = Customers.objects.filter(customer_id=data["customer_id"]).first()  # checking customer exists or not
+        customer = Customers.objects.filter(customer_id=data["customer_id"]).first()
         if not customer:
             return Response({"error": "Customer not found"}, status=404)
 
         credit_score = 100
-        all_loans = customer.loans.all()  # how much loan this customer take 
+        all_loans = customer.loans.all()
 
-        # Current loan status
         if customer.current_debt > customer.approved_limit:
             credit_score = 0
         else:
-            total_loans = all_loans.count()   # count how many loans this customer has taken
+            total_loans = all_loans.count()
             if total_loans > 0:
-                paid_on_time = sum([loan.emis_paid_on_time for loan in all_loans])
+                paid_on_time = sum([loan.EMIs_paid_on_time for loan in all_loans])
                 total_emis = sum([loan.tenure for loan in all_loans])
                 if total_emis > 0 and paid_on_time / total_emis > 0.8:
                     credit_score += 15
@@ -47,14 +44,13 @@ class CheckEligibilityView(APIView):
                 credit_score += 10
 
             this_year = date.today().year
-            if any(loan.start_date.year == this_year for loan in all_loans):
+            if any(loan.Date_Approval_loan.year == this_year for loan in all_loans):
                 credit_score += 10
 
             total_loan_amt = sum([loan.loan_amount for loan in all_loans])
             if total_loan_amt > 20_00_000:
                 credit_score += 15
 
-        # EMI logic
         monthly_installment = (
             data["loan_amount"] * (1 + (data["interest_rate"] / 100)) ** (data["tenure"] / 12)
         ) / data["tenure"]
@@ -66,7 +62,6 @@ class CheckEligibilityView(APIView):
                 "reason": "EMIs exceed 50% of income"
             }, status=200)
 
-        # Adjust interest_rate if needed
         corrected_rate = data["interest_rate"]
         if credit_score > 50:
             pass
@@ -90,7 +85,7 @@ class CheckEligibilityView(APIView):
             "monthly_installment": round(monthly_installment, 2),
         }, status=200)
 
-# ---------------         create a loan for the customer
+
 class CreateLoanView(APIView):
     def post(self, request):
         serializer = CreateLoanSerializer(data=request.data)
@@ -102,47 +97,45 @@ class CreateLoanView(APIView):
         if not customer:
             return Response({"error": "Customer not found"}, status=404)
 
-        # Calculate monthly_installment
         monthly_installment = (
             data["loan_amount"] * (1 + (data["interest_rate"] / 100)) ** (data["tenure"] / 12)
         ) / data["tenure"]
 
-        start_date = timezone.now().date()
-        end_date = start_date + relativedelta(months=data["tenure"])
+        Date_Approval_loan = timezone.now().date()
+        end_date = Date_Approval_loan + relativedelta(months=data["tenure"])
 
         loan = Loans.objects.create(
+            # No need to pass loan_id here; let Django auto-assign it unless you're manually controlling it
             customer=customer,
             loan_amount=data["loan_amount"],
             interest_rate=data["interest_rate"],
             tenure=data["tenure"],
             monthly_installment=monthly_installment,
-            emis_paid_on_time=0,
-            start_date=start_date,
+            EMIs_paid_on_time=0,
+            Date_Approval_loan=Date_Approval_loan,
             end_date=end_date,
         )
 
-        # Update customer's current debt
         customer.current_debt += monthly_installment
         customer.save()
 
         return Response({
-            "loan_id": loan.id,
+            "loan_id": loan.loan_id,
             "customer_id": customer.customer_id,
             "loan_approved": True,
             "monthly_installment": round(monthly_installment, 2),
         }, status=201)
-    
-# ------------       return the full detailed informations of the customer as well as customer (user)
+
 
 class ViewLoanDetail(APIView):
     def get(self, request, loan_id):
         try:
-            loan = Loans.objects.select_related("customer").get(id=loan_id)
+            loan = Loans.objects.select_related("customer").get(loan_id=loan_id)
         except Loans.DoesNotExist:
             return Response({"error": "Loan not found"}, status=404)
 
         return Response({
-            "loan_id": loan.id,
+            "loan_id": loan.loan_id,
             "customer_id": loan.customer.customer_id,
             "first_name": loan.customer.first_name,
             "last_name": loan.customer.last_name,
@@ -152,12 +145,11 @@ class ViewLoanDetail(APIView):
             "interest_rate": loan.interest_rate,
             "monthly_installment": round(loan.monthly_installment, 2),
             "tenure": loan.tenure,
-            "start_date": loan.start_date,
+            "start_date": loan.Date_Approval_loan,
             "end_date": loan.end_date,
-            "emis_paid_on_time": loan.emis_paid_on_time,
+            "emis_paid_on_time": loan.EMIs_paid_on_time,
         }, status=200)
 
- # ---------------       return particular customer loans details and all the information
 
 class ViewCustomerLoans(APIView):
     def get(self, request, customer_id):
@@ -170,14 +162,14 @@ class ViewCustomerLoans(APIView):
         result = []
         for loan in loans:
             result.append({
-                "loan_id": loan.id,
+                "loan_id": loan.loan_id,
                 "loan_amount": loan.loan_amount,
                 "interest_rate": loan.interest_rate,
                 "tenure": loan.tenure,
                 "monthly_installment": round(loan.monthly_installment, 2),
-                "start_date": loan.start_date,
+                "start_date": loan.Date_Approval_loan,
                 "end_date": loan.end_date,
-                "emis_paid_on_time": loan.emis_paid_on_time,
+                "emis_paid_on_time": loan.EMIs_paid_on_time,
             })
 
         return Response({
